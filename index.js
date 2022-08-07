@@ -2,6 +2,25 @@ const express = require('express')
 const app = express()
 const cors = require('cors')
 require('dotenv').config()
+const mySecret = process.env.MONGO_URI;
+const mongoose = require('mongoose')
+
+//connect to db
+mongoose.connect(mySecret, {useNewUrlParser: true, useUnifiedTopology: true})
+
+const {Schema } = mongoose;
+const userSchema = new Schema({
+  username : {type: String, required: true},
+  description: String,
+  duration: Number,
+  date: { type: Date.toDateString , default: Date.now },
+  count: Number,
+  log: [{
+    description: String,
+    duration: Number,
+    date: { type: Date.toDateString , default: Date.now },
+  }]
+})
 
 app.use(cors())
 app.use(express.static('public'))
