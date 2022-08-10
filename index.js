@@ -4,23 +4,27 @@ const cors = require('cors')
 require('dotenv').config()
 const mySecret = process.env.MONGO_URI;
 const mongoose = require('mongoose')
+const boydParser = require('body-parser')
 
 //connect to db
 mongoose.connect(mySecret, {useNewUrlParser: true, useUnifiedTopology: true})
 
+
+//create schema mongoose to send to mongodb
 const {Schema } = mongoose;
-const userSchema = new Schema({
-  username : {type: String, required: true},
+const UserSchema = new Schema({
+  username : {type: String, required: true}
+})
+const ExerSchema = new Schema({
+  userId : {type: String , required: true},
   description: String,
   duration: Number,
-  date: { type: Date.toDateString , default: Date.now },
-  count: Number,
-  log: [{
-    description: String,
-    duration: Number,
-    date: { type: Date.toDateString , default: Date.now },
-  }]
+  date: Date,
 })
+
+//create models whit mongoose
+const User = new mongoose.model('User', UserSchema);
+const Exercise = new mongoose.model('Exercise', ExerSchema)
 
 app.use(cors())
 app.use(express.static('public'))
@@ -28,8 +32,9 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html')
 });
 
-
-
+app.post('/api/users', (req, res) => {
+  console.log(req.body)
+})
 
 
 const listener = app.listen(process.env.PORT || 3000, () => {
