@@ -4,7 +4,7 @@ const cors = require('cors')
 require('dotenv').config()
 const mySecret = process.env.MONGO_URI;
 const mongoose = require('mongoose')
-const boydParser = require('body-parser')
+const bodyParser = require('body-parser')
 
 //connect to db
 mongoose.connect(mySecret, {useNewUrlParser: true, useUnifiedTopology: true})
@@ -36,6 +36,8 @@ app.post('/api/users', (req, res) => {
   console.log(req.body)
 })
 
+app.use(bodyParser.urlencoded({extended: false}))
+app.use(bodyParser.json())
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port)
