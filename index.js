@@ -6,6 +6,10 @@ const mySecret = process.env.MONGO_URI;
 const mongoose = require('mongoose')
 const bodyParser = require('body-parser')
 
+//using bodyparser
+app.use(bodyParser.urlencoded({extended: false}))
+app.use(bodyParser.json())
+
 //connect to db
 mongoose.connect(mySecret, {useNewUrlParser: true, useUnifiedTopology: true})
 
@@ -16,7 +20,6 @@ const UserSchema = new Schema({
   username : {type: String, required: true}
 })
 const ExerSchema = new Schema({
-  userId : {type: String , required: true},
   description: String,
   duration: Number,
   date: Date,
@@ -33,11 +36,37 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/users', (req, res) => {
-  console.log(req.body)
+  const newUser = new User({username: req.body.username})
+  newUser.save((err, data) =>{
+    if(err || !data) res.send('Dont save this user');
+    res.json(data)
+  })
 })
 
-app.use(bodyParser.urlencoded({extended: false}))
-app.use(bodyParser.json())
+app.post('/api/users/:id/exercises', (req, res) => {
+  const id = req.params.id;
+  const {description, duration, date} = req.body;
+  User.findById(id,(err, dataUserFind) =>{
+    if(err || !dataUserFind) res.send('Dont find that id');
+    const newExercise = new Exercise({
+      userId : id,
+      description, 
+      duration, 
+      date : new Date(date)
+    })
+    newExercise.save((err,data) => {
+      if(err || !data) res.send('Dont save that exercise');
+      const {description, duration, date, _id} = data;
+      res.json({
+        username: dataUserFind.username,
+        description,
+        duration,
+        date : date.toDateString(),
+        _id: dataUserFind.id
+      })
+    })
+  })
+})
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port)
