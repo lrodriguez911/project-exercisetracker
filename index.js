@@ -72,7 +72,15 @@ app.get('/api/users/:_id/logs', (req, res) => {
     if(err || !data){
       res.send('dont find that user')
     } else{
-      res.send(id)
+      let dataObj = {};
+      if(from){
+        dataObj["$gte"] = new Date(from)
+      }
+      if(to){
+        dataObj["$lte"]
+      }
+      let filter = {userId : id};
+      Exercises.find(filter)
     }
   })
 })
