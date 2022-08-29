@@ -69,7 +69,7 @@ app.get('/api/users/:_id/logs', (req, res) => {
   const {from, to, limit} = req.query;
   const {id} = req.params;
   User.findById(id, (err, dataUser) =>{
-    if(err || !data){
+    if(err || !dataUser){
       res.send('dont find that user')
     } else{
       let dataObj = {};
