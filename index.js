@@ -15,11 +15,12 @@ mongoose.connect(mySecret, {useNewUrlParser: true, useUnifiedTopology: true})
 
 
 //create schema mongoose to send to mongodb
-const {Schema } = mongoose;
+const {Schema} = mongoose;
 const UserSchema = new Schema({
   username : {type: String, required: true}
 })
 const ExerSchema = new Schema({
+  userId: {type: String, required: true},
   description: String,
   duration: Number,
   date: Date,
@@ -43,18 +44,49 @@ app.post('/api/users', (req, res) => {
   })
 })
 
+app.get('/api/users', (req, res) => {
+   User.find({}, (err, data) => {
+  if(err) res.send('Dont find user to show');
+  res.json(data)})
+})
+app.get('/api/users/:id/logs', (req, res) => {
+  const {from, to, limit} = req.query;
+  const {id} = req.params;
+  User.findById(id, (err, dataUser) =>{
+    if(err || !dataUser){
+      res.send('dont find that user')
+    } else{
+      let dataObj = {};
+      if(from){
+        dataObj["$gte"] = new Date(from)
+      }
+      if(to){
+        dataObj["$lte"]
+      }
+      let filter = {userId : id};
+      Exercise.find(filter)
+    }
+  })
+})
 app.post('/api/users/:id/exercises', (req, res) => {
-  const id = req.params.id;
-  const {description, duration, date} = req.body;
+  const {id} = req.params;
+  const {description, duration} = req.body;
+  console.log(typeof req.body.date)
+  console.log(new Date(req.body.date))
+  
   User.findById(id,(err, dataUserFind) =>{
     if(err || !dataUserFind) res.send('Dont find that id');
     const newExercise = new Exercise({
       userId : id,
       description, 
       duration, 
-      date : new Date(date)
+      date : new Date(req.body.date)
     })
-    newExercise.save((err,data) => {
+    console.log(newExercise)
+    if(newExercise.date === ''){
+      newExercise.date = new Date().toISOString().substring(0,10)
+    }
+    newExercise.save((err, data) => {
       if(err || !data) res.send('Dont save that exercise');
       const {description, duration, date, _id} = data;
       res.json({
@@ -62,12 +94,12 @@ app.post('/api/users/:id/exercises', (req, res) => {
         description,
         duration,
         date : date.toDateString(),
-        _id: dataUserFind.id
+        _id
       })
     })
   })
 })
 
-const listener = app.listen(process.env.PORT || 3000, () => {
+const listener = app.listen(process.env.PORT || 3001, () => {
   console.log('Your app is listening on port ' + listener.address().port)
 })
