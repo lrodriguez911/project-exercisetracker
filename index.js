@@ -56,15 +56,19 @@ app.get('/api/users/:id/logs', (req, res) => {
     if(err || !dataUser){
       res.send('dont find that user')
     } else{
-      let dataObj = {};
+      let dataObjPar = {};
       if(from){
-        dataObj["$gte"] = new Date(from)
+        dataObjPar["$gte"] = new Date(from)
       }
       if(to){
-        dataObj["$lte"]
+        dataObjPar["$lte"] = new Date(to)
       }
       let filter = {userId : id};
-      Exercise.find(filter)
+      if(from || to){
+        filter.date = dataObjPar
+      }
+      let nullNot = limit ?? 200
+      Exercise.find(filter).limit(nullNot).exec()
     }
   })
 })
