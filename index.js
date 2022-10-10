@@ -67,8 +67,20 @@ app.get('/api/users/:id/logs', (req, res) => {
       if(from || to){
         filter.date = dataObjPar
       }
-      let nullNot = limit ?? 200
-      Exercise.find(filter).limit(nullNot).exec()
+      let nullNot = limit ?? 100;
+      Exercise.find(filter).limit(+nullNot).exec((err, data) => {
+        if(err || !data){ res.send({})}
+      const count = data.length;
+      const log = data;
+      const {username, _id} = dataUser;
+      const resultLog = log.map((i) => {
+        return {
+      description : i.description,
+      duration : i.duration,
+      date: i.date.toDateString()}
+      })
+      res.json({username, count, _id, resultLog})
+      })
     }
   })
 })
