@@ -16,16 +16,16 @@ mongoose.connect(mySecret, {useNewUrlParser: true, useUnifiedTopology: true})
 
 //create schema mongoose to send to mongodb
 const {Schema} = mongoose;
-const UserSchema = new Schema({
-  username : {type: String, required: true}
-})
+
 const ExerSchema = new Schema({
-  userId: {type: String, required: true},
-  description: String,
-  duration: Number,
+  description: {type: String, required: true},
+  duration: {type: Number, required: true},
   date: Date,
 })
-
+const UserSchema = new Schema({
+  username : {type: String, required: true},
+  log : [ExerSchema]
+})
 //create models whit mongoose
 const User = new mongoose.model('User', UserSchema);
 const Exercise = new mongoose.model('Exercise', ExerSchema)
@@ -37,15 +37,18 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/users', (req, res) => {
-  const newUser = new User({username: req.body.username})
+  const {username} = req.body
+  const newUser = new User({username})
   newUser.save((err, data) =>{
+    const {username, _id} = data
     if(err || !data) res.send('Dont save this user');
-    res.json(data)
+    res.json(
+      {username, _id})
   })
 })
 
-app.get('/api/users', (req, res) => {
-   User.find({}, (err, data) => {
+app.get('/api/users',(req, res) => {
+  User.find({}, (err, data) => {
   if(err) res.send('Dont find user to show');
   res.json(data)})
 })
@@ -68,51 +71,45 @@ app.get('/api/users/:id/logs', (req, res) => {
         filter.date = dataObjPar
       }
       let nullNot = limit ?? 100;
-      Exercise.find(filter).limit(+nullNot).exec((err, data) => {
+      User.log.find(filter).limit(+nullNot).exec()
+      /* User.log.find(filter).limit(+nullNot).exec((err, data) => {
         if(err || !data){ res.send({})}
       const count = data.length;
-      const log = data;
+      const constLog = data;
       const {username, _id} = dataUser;
-      const resultLog = log.map((i) => {
+      const log = constLog.map((i) => {
         return {
       description : i.description,
       duration : i.duration,
       date: i.date.toDateString()}
       })
-      res.json({username, count, _id, resultLog})
-      })
+      res.json({username, count, _id, log})
+      }) */
     }
   })
 })
 app.post('/api/users/:id/exercises', (req, res) => {
   const {id} = req.params;
   const {description, duration} = req.body;
-  console.log(typeof req.body.date)
-  console.log(new Date(req.body.date))
-  
-  User.findById(id,(err, dataUserFind) =>{
-    if(err || !dataUserFind) res.send('Dont find that id');
-    const newExercise = new Exercise({
-      userId : id,
+  const newExercise = new Exercise({
       description, 
       duration, 
       date : new Date(req.body.date)
     })
-    console.log(newExercise)
-    if(newExercise.date === ''){
+    if(!newExercise.date > 0){
       newExercise.date = new Date().toISOString().substring(0,10)
     }
-    newExercise.save((err, data) => {
-      if(err || !data) res.send('Dont save that exercise');
-      const {description, duration, date, _id} = data;
+  User.findByIdAndUpdate(id,{$push : {log:newExercise}},{new: true},(err, dataUserFind) =>{
+      if(err || !dataUserFind) res.send('Dont save that exercise');
+      const {description, duration, date, _id} = newExercise;
       res.json({
         username: dataUserFind.username,
         description,
         duration,
-        date : date.toDateString(),
+        date: date.toDateString(),
         _id
       })
-    })
+    
   })
 })
 
