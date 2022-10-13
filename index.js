@@ -55,46 +55,51 @@ app.get('/api/users',(req, res) => {
 app.get('/api/users/:id/logs', (req, res) => {
   const {from, to, limit} = req.query;
   const {id} = req.params;
-  User.findById(id, (err, dataUser) =>{
+ 
+  
+  User.findById(id ,(err, dataUser) =>{
     if(err || !dataUser){
       res.send('dont find that user')
     } else{
-      let dataObjPar = {};
-      if(from){
-        dataObjPar["$gte"] = new Date(from)
-      }
-      if(to){
-        dataObjPar["$lte"] = new Date(to)
-      }
-      let filter = {userId : id};
-      if(from || to){
-        filter.date = dataObjPar
-      }
-      let nullNot = limit ?? 100;
-      User.log.find(filter).limit(+nullNot).exec()
-      /* User.log.find(filter).limit(+nullNot).exec((err, data) => {
-        if(err || !data){ res.send({})}
-      const count = data.length;
-      const constLog = data;
-      const {username, _id} = dataUser;
-      const log = constLog.map((i) => {
-        return {
+    let log = dataUser.log.map((i) => {
+      return {
       description : i.description,
       duration : i.duration,
       date: i.date.toDateString()}
-      })
-      res.json({username, count, _id, log})
-      }) */
+    });
+    let nullNot = limit ?? 50;
+    let fromDate = new Date(0);
+    let toDate = new Date();
+    if(from){
+      fromDate = new Date(from)
+      }
+    if(to){
+      toDate = new Date(to)
     }
+    if(from || to){
+      log = dataUser.log.filter((i) => { 
+      const dateExercises = i.date.getTime()
+       return dateExercises >= fromDate && dateExercises <= toDate
+      })
+    }
+    fromDate = fromDate.getTime()
+    toDate = toDate.getTime()
+    if(limit){
+    log = log.slice(0, nullNot)
+    } 
+    const {username, _id} = dataUser;
+    let count = log.length;
+    res.json({username, count, _id, log})
+    } 
   })
 })
 app.post('/api/users/:id/exercises', (req, res) => {
   const {id} = req.params;
   const {description, duration} = req.body;
   const newExercise = new Exercise({
-      description, 
-      duration, 
-      date : new Date(req.body.date)
+      description,
+      duration,
+      date : new Date(req.body.date).toDateString()
     })
     if(!newExercise.date > 0){
       newExercise.date = new Date().toISOString().substring(0,10)
@@ -102,12 +107,14 @@ app.post('/api/users/:id/exercises', (req, res) => {
   User.findByIdAndUpdate(id,{$push : {log:newExercise}},{new: true},(err, dataUserFind) =>{
       if(err || !dataUserFind) res.send('Dont save that exercise');
       const {description, duration, date, _id} = newExercise;
+      const {username} = dataUserFind;
+      console.log(newExercise)
       res.json({
-        username: dataUserFind.username,
+        username,
         description,
         duration,
-        date: date.toDateString(),
-        _id
+        date: new Date(date).toDateString(),
+        _id:id
       })
     
   })
